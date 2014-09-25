@@ -6,56 +6,59 @@ var Node = {
     ndescription: 'something',
     previous: null,
     next: null,
-    LINE_ATTRS: {stroke: '#aaa', 'stroke-width': 5},
-    NODE_ATTRS: {stroke: '#aaa', 'stroke-width': 2, fill: 'white'},
-    NODE_RADIUS: 50,
 
     makeLine: function(start, len) {
         var lparams = ['M', start, HORIZON, 'l', len, 0];
-        return this.paper.path(lparams.join(' ')).attr(this.LINE_ATTRS);
+        return this.paper.path(lparams.join(' ')).attr(LINE_ATTRS);
     },
 
     makeCircle: function(x, y) {
-        return this.paper.circle(x, y, this.NODE_RADIUS).attr(this.NODE_ATTRS);
+        return this.paper.circle(x, y, NODE_RADIUS).attr(NODE_ATTRS);
     },
 
     segment: function() {
-        var ARM_LEN = 50;
         var left_l = this.makeLine(this.start_x, ARM_LEN);
-        var circle_x = this.start_x + ARM_LEN + this.NODE_RADIUS;
+        var circle_x = this.start_x + ARM_LEN + NODE_RADIUS;
         var circle = this.makeCircle(circle_x, HORIZON);
-        var right_l = this.makeLine(this.start_x + ARM_LEN + this.NODE_RADIUS*2, ARM_LEN);
+        var right_l = this.makeLine(this.start_x + ARM_LEN + NODE_RADIUS*2, ARM_LEN);
         return this.paper.set(left_l, circle, right_l);
     },
 
     highlightNode: function(){
+        console.log('highlightNode called on ' + this);
         request_ball.attr({'stroke-width': 0});
-        //redden(node[0].items[1]);
+        this.attr({fill: 'red'});
         this.paper.text(this.start_x - 50, HORIZON, this.nname).attr({"font-size": 12});
     },
 
     animateNext: function() {
-        var destination = null;  
+        var destination = null;
 
         if (this.next != null) {
             console.log('go to next');
-            destination = Raphael.animation({cx: this.next.start_x, cy: HORIZON}, speed, this.highlightNode);
+            destination = Raphael.animation({cx: this.next.start_x, cy: HORIZON}, SPEED, this.highlightNode);
             request_ball.animate(destination);
         } else if (this.previous != null) {
-            destination = Raphael.animation({cx: this.previous.start_x, cy: HORIZON}, -speed, this.highlightNode);
+            console.log('go to previous');
+            destination = Raphael.animation({cx: this.previous.start_x, cy: HORIZON}, -SPEED, this.highlightNode);
             request_ball.animate(destination);
+        } else {
+            console.log('go to nowhere');
         }
     }
 };
 
 function makeNodes() {
     var p = new Raphael(document.getElementById('canvas_container'), 1000, 500);
+    LINE_ATTRS = {stroke: '#aaa', 'stroke-width': 5};
+    NODE_ATTRS = {stroke: '#aaa', 'stroke-width': 2, fill: 'white'};
+    NODE_RADIUS = 50;
+    SPEED = 500;
+    HORIZON = 200;
+    ARM_LEN = 50;
 
     function main() {
-        speed = 500;
-        HORIZON = 200;
-
-        request_ball = p.circle(0, HORIZON, 5).attr({fill: 'red'});
+        request_ball = p.circle(-50, HORIZON, 5).attr({fill: 'red'});
 
         for(var i = 0; i < 4; i+=1) {
             var prev = null;
