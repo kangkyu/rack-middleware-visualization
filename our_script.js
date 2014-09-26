@@ -1,55 +1,47 @@
-var Node = {
-    paper: null, // We must get a Raphael canvas passed into the function
-    start_x: 0,
-    nname: 'default',
-    category: 'default',
-    ndescription: 'something',
-    previous: null,
-    next: null,
+function Node(paper, nodeName, startX) {
+    var that      = this;  // Create a handle to the current node
+    this.paper    = paper; // Raphael canvas on which this node is drawn
+    this.nodeName = nodeName;
+    this.startX   = startX;
+    this.category = 'default';
+    this.description = 'description text';
+    this.previous = null;
+    this.next     = null;
+    this.circle   = null; // We will need access to the circle portion of the node so we can highlight it
 
-    makeLine: function(start, len) {
+    this.makeLine = function(start, len) {
         var lparams = ['M', start, HORIZON, 'l', len, 0];
         return this.paper.path(lparams.join(' ')).attr(LINE_ATTRS);
-    },
+    }
 
-    makeCircle: function(x, y) {
+    this.makeCircle = function(x, y) {
         return this.paper.circle(x, y, NODE_RADIUS).attr(NODE_ATTRS);
-    },
+    }
 
-    segment: function() {
-        var left_l = this.makeLine(this.start_x, ARM_LEN);
-        var circle_x = this.start_x + ARM_LEN + NODE_RADIUS;
-        var circle = this.makeCircle(circle_x, HORIZON);
-        var right_l = this.makeLine(this.start_x + ARM_LEN + NODE_RADIUS*2, ARM_LEN);
-        return this.paper.set(left_l, circle, right_l);
-    },
+    this.draw = function() {
+        var left_l = this.makeLine(this.startX, ARM_LEN);
+        var circle_x = this.startX + ARM_LEN + NODE_RADIUS;
+        this.circle = this.makeCircle(circle_x, HORIZON);
+        var right_l = this.makeLine(this.startX + ARM_LEN + NODE_RADIUS*2, ARM_LEN);
+        return this.paper.set(left_l, this.circle, right_l);
+    }
 
-    highlightNode: function(){
-        console.log('highlightNode called on ' + this);
-        request_ball.attr({'stroke-width': 0});
-        this.attr({fill: 'red'});
-        this.paper.text(this.start_x - 50, HORIZON, this.nname).attr({"font-size": 12});
-    },
-
-    animateNext: function() {
-        var destination = null;
-
-        if (this.next != null) {
-            console.log('go to next');
-            destination = Raphael.animation({cx: this.next.start_x, cy: HORIZON}, SPEED, this.highlightNode);
-            request_ball.animate(destination);
-        } else if (this.previous != null) {
-            console.log('go to previous');
-            destination = Raphael.animation({cx: this.previous.start_x, cy: HORIZON}, -SPEED, this.highlightNode);
-            request_ball.animate(destination);
+    this.highlightNode = function() {
+        console.log(that);
+        that.circle.attr({fill: 'red'});
+        this.paper.text(that.startX + ARM_LEN + NODE_RADIUS, HORIZON, that.nodeName).attr({"font-size": 12});
+        if (that.next != null) {
+            destination = that.next;
+        } else if (that.previous != null) {
+            destination = that.previous;
         } else {
-            console.log('go to nowhere');
+            console.log('no where to go');
         }
+        console.log('destination should be ' + destination.nodeName);
     }
 };
 
-function makeNodes() {
-    var p = new Raphael(document.getElementById('canvas_container'), 1000, 500);
+function createAnimation() {
     LINE_ATTRS = {stroke: '#aaa', 'stroke-width': 5};
     NODE_ATTRS = {stroke: '#aaa', 'stroke-width': 2, fill: 'white'};
     NODE_RADIUS = 50;
@@ -57,40 +49,36 @@ function makeNodes() {
     HORIZON = 200;
     ARM_LEN = 50;
 
-    function main() {
-        request_ball = p.circle(-50, HORIZON, 5).attr({fill: 'red'});
+    var p = new Raphael(document.getElementById('canvas_container'), 1000, 500);
+    var requestBall = p.circle(0, HORIZON, 5).attr({fill: 'red'});
 
+    function makeNodes() {
         for(var i = 0; i < 4; i+=1) {
-            var prev = null;
-            if (i > 0) {
-                prev = node[i-1];
-            }
-
-            node[i] = Object.create(Node, { paper: {value: p},
-                                            start_x: {value: 200*i},
-                                            previous: {value: prev},
-                                            nname: {value: "NODE " + i}
-                                        });
-            if (i > 0) {
-                node[i-1].next = node[i];
-            }
-            node[i].segment();
+            // Create new node with paper, nodeName, and startX parameters
+            node[i] = new Node(p, "NODE " + (i+1), 200*i);  // cheat and display nodes as if we started counting arrays at 1
+            // If this isn't the first node, set it's previous attribute to previous node
+            if (i > 0) { node[i].previous = node[i-1]; }
+            // And update previous node to know this node as 'next'
+            if (i > 0) { node[i-1].next = node[i]; }
+            node[i].draw();
         };
     };
 
-    var node = [];
-    var i = 0;
-    main();
-    console.log(node[0]);
-
-    function start() {
-        node[i].animateNext();
-        i++;
+    function animateRequestBall(destination) {
+        var centerOfNode = destination.startX + ARM_LEN + NODE_RADIUS;
+        var anim = Raphael.animation({cx: centerOfNode, cy: HORIZON}, SPEED, destination.highlightNode);
+        requestBall.animate(anim);
     }
 
-    $('#canvas_container').on("click", start);
+    var node = [];
+    makeNodes();
+    destination = node[0];
+
+    function move() {
+        animateRequestBall(destination);
+    }
+
+    $('#canvas_container').on("click", move);
 };
 
-
-
-$(document).ready(makeNodes);
+$(document).ready(createAnimation);
