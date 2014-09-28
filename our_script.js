@@ -30,7 +30,49 @@ function Node(paper, nodeName, startX) {
         console.log(that);
         that.circle.attr({fill: 'red'});
         this.paper.text(that.startX + ARM_LEN + NODE_RADIUS, HORIZON, that.nodeName).attr({"font-size": 12});
-        if (that.next != null) {
+    }
+};
+
+function MiddlewareStack() {
+    var that = this;  // Create a handle to the current stack
+    this.nodes = [];
+
+    this.addNode = function(node) {
+        this.nodes.push(node);
+    };
+
+    this.draw = function() {
+        for(var i = 0; i < 4; i+=1) {
+            this.nodes[i].draw();
+        }
+    };
+
+};
+
+function Animation(paper) {
+    var that      = this;  // Create a handle to the current animation
+    this.paper = paper;
+    this.requestBall = this.paper.circle(0, HORIZON, 5).attr({fill: 'red'});
+
+    this.steps = [];
+
+    this.addStep = function(node) {
+        this.steps.push(node);
+    };
+
+    this.run = function() {
+        for(var i = 0; i < steps.length; i+=1) {
+            this.animateRequestBall(steps[i]);
+        };
+    };
+
+    this.animateRequestBall = function(destination) {
+        var centerOfNode = destination.startX + ARM_LEN + NODE_RADIUS;
+        var anim = Raphael.animation({cx: centerOfNode, cy: HORIZON}, SPEED, destination.highlightNode);
+        requestBall.animate(anim);
+    };
+
+/*        if (that.next != null) {
             destination = that.next;
         } else if (that.previous != null) {
             destination = that.previous;
@@ -38,10 +80,11 @@ function Node(paper, nodeName, startX) {
             console.log('no where to go');
         }
         console.log('destination should be ' + destination.nodeName);
-    }
+*/
+
 };
 
-function createAnimation() {
+function displayRailsMiddlewareStack() {
     LINE_ATTRS = {stroke: '#aaa', 'stroke-width': 5};
     NODE_ATTRS = {stroke: '#aaa', 'stroke-width': 2, fill: 'white'};
     NODE_RADIUS = 50;
@@ -50,35 +93,41 @@ function createAnimation() {
     ARM_LEN = 50;
 
     var p = new Raphael(document.getElementById('canvas_container'), 1000, 500);
-    var requestBall = p.circle(0, HORIZON, 5).attr({fill: 'red'});
+    var middlewares =  new MiddlewareStack();
+    var animation1;
+    var animation2;
 
-    function makeNodes() {
+    // Eventually this will be specific for each set of animations.
+    // We will add nodes representing each of the middlewares in the stack we are displaying.
+    // For now, just make 4 generic nodes to play with while I figure out my API.
+    var configureMiddleware = function(middlewares) {
+        var middlewares = middlewares;
         for(var i = 0; i < 4; i+=1) {
             // Create new node with paper, nodeName, and startX parameters
-            node[i] = new Node(p, "NODE " + (i+1), 200*i);  // cheat and display nodes as if we started counting arrays at 1
-            // If this isn't the first node, set it's previous attribute to previous node
-            if (i > 0) { node[i].previous = node[i-1]; }
-            // And update previous node to know this node as 'next'
-            if (i > 0) { node[i-1].next = node[i]; }
-            node[i].draw();
+            middlewares.addNode(new Node(p, "NODE " + (i+1), 200*i));
         };
+        return middlewares;
+    }
+
+    animation1 = function() {
+        var anim = new Animation(p);
+        anim.addStep(middlewares.nodes[1]);
+        anim.addStep(middlewares.nodes[2]);
+        anim.addStep(middlewares.nodes[3]);
+        anim.addStep(middlewares.nodes[2]);
+        anim.addStep(middlewares.nodes[1]);
+        return anim;
     };
 
-    function animateRequestBall(destination) {
-        var centerOfNode = destination.startX + ARM_LEN + NODE_RADIUS;
-        var anim = Raphael.animation({cx: centerOfNode, cy: HORIZON}, SPEED, destination.highlightNode);
-        requestBall.animate(anim);
+    var runAnimation = function() {
+        // CNK can't figure out how to get to animation1 to start running steps
+        animation1.run();
     }
 
-    var node = [];
-    makeNodes();
-    destination = node[0];
-
-    function move() {
-        animateRequestBall(destination);
-    }
-
-    $('#canvas_container').on("click", move);
+    // OK now actually do stuff
+    configureMiddleware(middlewares);
+    middlewares.draw();
+    $('#canvas_container').on("click", runAnimation);
 };
 
-$(document).ready(createAnimation);
+$(document).ready(displayRailsMiddlewareStack);
