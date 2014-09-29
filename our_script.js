@@ -27,7 +27,7 @@ function Node(paper, nodeName, startX) {
     }
 
     this.highlightNode = function() {
-        console.log(that);
+        console.log('in highlightNode for node ' + that);
         that.circle.attr({fill: 'red'});
         this.paper.text(that.startX + ARM_LEN + NODE_RADIUS, HORIZON, that.nodeName).attr({"font-size": 12});
     }
@@ -61,40 +61,30 @@ function Animation(paper) {
     };
 
     this.run = function() {
-        for(var i = 0; i < steps.length; i+=1) {
-            this.animateRequestBall(steps[i]);
+        for(var i = 0; i < this.steps.length; i+=1) {
+            console.log('in run for node ' + i);
+            this.animateRequestBall(this.steps[i]);
         };
     };
 
     this.animateRequestBall = function(destination) {
+        console.log('in animate destination is ' + destination);
         var centerOfNode = destination.startX + ARM_LEN + NODE_RADIUS;
         var anim = Raphael.animation({cx: centerOfNode, cy: HORIZON}, SPEED, destination.highlightNode);
-        requestBall.animate(anim);
+        this.requestBall.animate(anim);
     };
-
-/*        if (that.next != null) {
-            destination = that.next;
-        } else if (that.previous != null) {
-            destination = that.previous;
-        } else {
-            console.log('no where to go');
-        }
-        console.log('destination should be ' + destination.nodeName);
-*/
-
 };
 
 function displayRailsMiddlewareStack() {
     LINE_ATTRS = {stroke: '#aaa', 'stroke-width': 5};
     NODE_ATTRS = {stroke: '#aaa', 'stroke-width': 2, fill: 'white'};
     NODE_RADIUS = 50;
-    SPEED = 500;
+    SPEED = 2000;
     HORIZON = 200;
     ARM_LEN = 50;
 
     var p = new Raphael(document.getElementById('canvas_container'), 1000, 500);
     var middlewares =  new MiddlewareStack();
-    var animation1;
     var animation2;
 
     // Eventually this will be specific for each set of animations.
@@ -111,17 +101,16 @@ function displayRailsMiddlewareStack() {
 
     animation1 = function() {
         var anim = new Animation(p);
+        anim.addStep(middlewares.nodes[0]);
         anim.addStep(middlewares.nodes[1]);
         anim.addStep(middlewares.nodes[2]);
-        anim.addStep(middlewares.nodes[3]);
-        anim.addStep(middlewares.nodes[2]);
         anim.addStep(middlewares.nodes[1]);
+        anim.addStep(middlewares.nodes[0]);
         return anim;
     };
 
     var runAnimation = function() {
-        // CNK can't figure out how to get to animation1 to start running steps
-        animation1.run();
+        animation1().run();
     }
 
     // OK now actually do stuff
