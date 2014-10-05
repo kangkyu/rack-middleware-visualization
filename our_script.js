@@ -49,10 +49,11 @@ function MiddlewareStack() {
 
 };
 
-function Animation(paper) {
+function Animation(paper, name) {
     var that      = this;  // Create a handle to the current animation
     this.paper = paper;
     this.requestBall = this.paper.circle(0, HORIZON, 5).attr({fill: 'red'});
+    this.name = name;
 
     this.steps = [];
 
@@ -60,11 +61,8 @@ function Animation(paper) {
         this.steps.push(node);
     };
 
-    this.run = function() {
-        for(var i = 0; i < this.steps.length; i+=1) {
-            console.log('in run for node ' + i);
-            this.animateRequestBall(this.steps[i]);
-        };
+    this.run = function(step) {
+        this.animateRequestBall(this.steps[step]);
     };
 
     this.animateRequestBall = function(destination) {
@@ -72,6 +70,7 @@ function Animation(paper) {
         var centerOfNode = destination.startX + ARM_LEN + NODE_RADIUS;
         var anim = Raphael.animation({cx: centerOfNode, cy: HORIZON}, SPEED, destination.highlightNode);
         this.requestBall.animate(anim);
+        destination = this.steps[step++];
     };
 };
 
@@ -85,7 +84,8 @@ function displayRailsMiddlewareStack() {
 
     var p = new Raphael(document.getElementById('canvas_container'), 1000, 500);
     var middlewares =  new MiddlewareStack();
-    var animation2;
+    // global because it is initalized here but incremented in the animation.
+    step = 0;
 
     // Eventually this will be specific for each set of animations.
     // We will add nodes representing each of the middlewares in the stack we are displaying.
@@ -99,8 +99,9 @@ function displayRailsMiddlewareStack() {
         return middlewares;
     }
 
+    // For each middleware stack, we will provide sets of animations
     animation1 = function() {
-        var anim = new Animation(p);
+        var anim = new Animation(p, 'First Animation');
         anim.addStep(middlewares.nodes[0]);
         anim.addStep(middlewares.nodes[1]);
         anim.addStep(middlewares.nodes[2]);
@@ -110,7 +111,7 @@ function displayRailsMiddlewareStack() {
     };
 
     var runAnimation = function() {
-        animation1().run();
+        animation1().run(step);
     }
 
     // OK now actually do stuff
