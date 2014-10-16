@@ -28,7 +28,7 @@ function Node(paper, nodeName, startX) {
 
     this.highlightNode = function() {
         console.log('in highlightNode for node ' + that);
-        that.circle.attr({fill: 'red'});
+        // that.circle.attr({fill: 'red'});
         this.paper.text(that.startX + ARM_LEN + NODE_RADIUS, HORIZON, that.nodeName).attr({"font-size": 12});
     }
 };
@@ -51,8 +51,9 @@ function MiddlewareStack() {
 
 function Animation(paper, name) {
     var that      = this;  // Create a handle to the current animation
+    console.log('created a new Animation object');
     this.paper = paper;
-    this.requestBall = this.paper.circle(0, HORIZON, 5).attr({fill: 'red'});
+    this.requestBall = this.paper.circle(0, HORIZON, 5).attr({fill: 'green'});
     this.name = name;
 
     this.steps = [];
@@ -62,12 +63,15 @@ function Animation(paper, name) {
     };
 
     this.run = function(step) {
+        console.log(this.steps, step)
         this.animateRequestBall(this.steps[step]);
     };
 
     this.animateRequestBall = function(destination) {
+
         console.log('in animate destination is ' + destination);
         var centerOfNode = destination.startX + ARM_LEN + NODE_RADIUS;
+        console.log(centerOfNode);
         var anim = Raphael.animation({cx: centerOfNode, cy: HORIZON}, SPEED, destination.highlightNode);
         this.requestBall.animate(anim);
         destination = this.steps[step++];
@@ -91,6 +95,7 @@ function displayRailsMiddlewareStack() {
     // We will add nodes representing each of the middlewares in the stack we are displaying.
     // For now, just make 4 generic nodes to play with while I figure out my API.
     var configureMiddleware = function(middlewares) {
+        console.log("configureMiddleware", middlewares)
         var middlewares = middlewares;
         for(var i = 0; i < 4; i+=1) {
             // Create new node with paper, nodeName, and startX parameters
@@ -102,6 +107,7 @@ function displayRailsMiddlewareStack() {
     // For each middleware stack, we will provide sets of animations
     animation1 = function() {
         var anim = new Animation(p, 'First Animation');
+        console.log("animation1", middlewares.nodes)
         anim.addStep(middlewares.nodes[0]);
         anim.addStep(middlewares.nodes[1]);
         anim.addStep(middlewares.nodes[2]);
@@ -110,12 +116,15 @@ function displayRailsMiddlewareStack() {
         return anim;
     };
 
+    configureMiddleware(middlewares);
+    var ourAnimation = animation1();
     var runAnimation = function() {
-        animation1().run(step);
+        ourAnimation.run(step);
     }
 
     // OK now actually do stuff
-    configureMiddleware(middlewares);
+    
+    console.debug("middlewares before draw", middlewares)
     middlewares.draw();
     $('#canvas_container').on("click", runAnimation);
 };
