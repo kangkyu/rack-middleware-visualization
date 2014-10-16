@@ -48,11 +48,9 @@ function MiddlewareStack() {
 
 };
 
-function Animation(paper, name) {
+function Animation(paper, name, middlewares) {
     var that      = this;  // Create a handle to the current animation
-    this.paper = paper;
-    this.requestBall = this.paper.circle(0, HORIZON, 5).attr({fill: 'green'});
-    this.name = name;
+    var requestBall = paper.circle(0, HORIZON, 5).attr({fill: 'green'});
 
     this.steps = [];
 
@@ -60,14 +58,21 @@ function Animation(paper, name) {
         this.steps.push(node);
     };
 
-    this.run = function(step) {
+    this.run = function() {
+        if (step >= this.steps.length) {
+            // reset
+            step = 0;
+            paper.clear();
+            middlewares.draw();
+            requestBall = paper.circle(0, HORIZON, 5).attr({fill: 'green'});
+        }
         this.animateRequestBall(this.steps[step]);
     };
 
     this.animateRequestBall = function(destination) {
         var centerOfNode = destination.startX + ARM_LEN + NODE_RADIUS;
         var anim = Raphael.animation({cx: centerOfNode, cy: HORIZON}, SPEED, destination.highlightNode);
-        this.requestBall.animate(anim);
+        requestBall.animate(anim);
         destination = this.steps[step++];
     };
 };
@@ -76,7 +81,7 @@ function displayRailsMiddlewareStack() {
     LINE_ATTRS = {stroke: '#aaa', 'stroke-width': 5};
     NODE_ATTRS = {stroke: '#aaa', 'stroke-width': 2, fill: 'white'};
     NODE_RADIUS = 50;
-    SPEED = 2000;
+    SPEED = 500;
     HORIZON = 200;
     ARM_LEN = 50;
 
@@ -99,7 +104,7 @@ function displayRailsMiddlewareStack() {
 
     // For each middleware stack, we will provide sets of animations
     animation1 = function() {
-        var anim = new Animation(p, 'First Animation');
+        var anim = new Animation(p, 'First Animation', middlewares);
         anim.addStep(middlewares.nodes[0]);
         anim.addStep(middlewares.nodes[1]);
         anim.addStep(middlewares.nodes[2]);
@@ -109,7 +114,7 @@ function displayRailsMiddlewareStack() {
     };
 
     var runAnimation = function() {
-        ourAnimation.run(step);
+        ourAnimation.run();
     }
 
     // OK now actually do stuff
